@@ -15,6 +15,9 @@ class Client:
 
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
+    def close(self):
+        self._socket.close()
+
     def _send_data(self, data: bytes):
         self._socket.sendto(data, (self.host, self.port))
 
