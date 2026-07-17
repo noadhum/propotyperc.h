@@ -1,2 +1,2 @@
 # propotyperc-api
-A simple, unofficial Python API for Propotype RC cars
+A simple, unofficial C API for Propotype RC cars
