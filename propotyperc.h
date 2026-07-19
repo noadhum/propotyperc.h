@@ -1,13 +1,13 @@
-#ifndef PROPOTYPE_H_
-#define PROPOTYPE_H_
+#ifndef PROPOTYPERC_H_
+#define PROPOTYPERC_H_
 
 #ifndef PROPODEF
 #define PROPODEF
 #endif // PROPODEF
 
-#endif // PROPOTYPE_H_
+#endif // PROPOTYPERC_H_
 
-#ifdef PROPOTYPE_IMPLEMENTATION
+#ifdef PROPOTYPERC_IMPLEMENTATION
 
 #ifdef _WIN32
 #    ifndef WIN32_LEAN_AND_MEAN
@@ -40,6 +40,26 @@
 #    include <assert.h>
 #    define PROPO_ASSERT assert
 #endif // PROPO_ASSERT
+
+PROPODEF void propo_assert(bool expr, const char *msg)
+{
+     if (!expr) {
+          fprintf(stderr, "%s\n", msg);
+          abort();
+     }
+}
+
+PROPODEF void propo_assertf(bool expr, const char *fmt, ...)
+{
+     if (!expr) {
+          va_list args;
+          va_start(args, fmt);
+          vfprintf(stderr, fmt, args);
+          va_end(args);
+          fprintf(stderr, "\n");
+          abort();
+     }
+}
 
 PROPODEF void propo_panic(const char *msg)
 {
@@ -78,14 +98,19 @@ typedef struct {
 
 static void buf_append_byte(Buffer *buffer, unsigned char byte)
 {
-     PROPO_ASSERT(buffer->count < PROPO_BUFFER_SIZE && "buf_append_byte: unable to append a full buffer");
+     propo_assert(buffer->count < PROPO_BUFFER_SIZE, "buf_append_byte: unable to append a full buffer");
      buffer->data[buffer->count++] = byte;
 }
 
 /*
- * This function only accepts number around 0-9999
+ * This function converts unsigned integer into ASCII values then append it into given buffer, expects number in range of 0 to 9999
+ * if parameter 'number' is greater than 9999, only the last four digits are appended, eg.
+ * ```c
+ * Buffer buffer = {0};
+ * buf_append_uint(&buffer, 12345); // buffer.data is now contains "2345"
+ * ```
  */
-static void buf_append_int(Buffer *buffer, int number)
+static void buf_append_uint(Buffer *buffer, unsigned int number)
 {
      int thousand = (number / 1000) % 10;
      int hundred = (number / 100) % 10;
@@ -114,15 +139,15 @@ static Buffer buf_from_cstr(const char *cstr)
 }
 
 #ifdef _WIN32
-#    define PROPOTYPE_INIT() propotype__windows_init(__func__)
-#    define PROPOTYPE_CLEANUP() propotype__windows_cleanup(__func__)
+#    define PROPOTYPERC_INIT() propotyperc__windows_init(__func__)
+#    define PROPOTYPERC_CLEANUP() propotyperc__windows_cleanup(__func__)
 #else
-#    define PROPOTYPE_INIT() do {} while(0)
-#    define PROPOTYPE_CLEANUP() do {} while(0)
+#    define PROPOTYPERC_INIT() do {} while(0)
+#    define PROPOTYPERC_CLEANUP() do {} while(0)
 #endif
 
 #ifdef _WIN32
-static void propotype__windows_init(const char *func)
+static void propotyperc__windows_init(const char *func)
 {
      WSADATA data;
      int result = WSAStartup(MAKEWORD(2,2), &data);
@@ -131,7 +156,7 @@ static void propotype__windows_init(const char *func)
      }
 }
 
-static void propotype__windows_cleanup(const char *func)
+static void propotyperc__windows_cleanup(const char *func)
 {
      int result = WSACleanup();
      if (result == SOCKET_ERROR) {
@@ -140,14 +165,14 @@ static void propotype__windows_cleanup(const char *func)
 }
 #endif
 
-PROPODEF void propotype_init(void)
+PROPODEF void propotyperc_init(void)
 {
-     PROPOTYPE_INIT();
+     PROPOTYPERC_INIT();
 }
 
-PROPODEF void propotype_cleanup(void)
+PROPODEF void propotyperc_cleanup(void)
 {
-     PROPOTYPE_CLEANUP();
+     PROPOTYPERC_CLEANUP();
 }
 
 #ifdef _WIN32
@@ -187,7 +212,6 @@ static void socket__windows_print_error(const char *func, int err)
      if (count == 0) {
           DWORD format_error = GetLastError();
           fprintf(stderr, "socket__windows_print_error (%"PRIu32"): Unable to print error code\n", (uint32_t)format_error);
-          LocalFree(msg);
           return;
      }
 
@@ -220,9 +244,9 @@ static void socket_close(Socket s)
 static int socket_send(Socket s, const Buffer *buffer, const struct sockaddr_in *address)
 {
 #    ifdef _WIN32
-     return sendto(s, (const char *)buffer->data, (int)buffer->count, 0, (struct sockaddr *)address, sizeof(struct sockaddr));
+     return sendto(s, (const char *)buffer->data, (int)buffer->count, 0, (struct sockaddr *)address, sizeof(*address));
 #    else
-     return (int)sendto(s, (const void *)buffer->data, buffer->count, 0, (struct sockaddr *)address, sizeof(struct sockaddr));
+     return (int)sendto(s, (const void *)buffer->data, buffer->count, 0, (struct sockaddr *)address, sizeof(*address));
 #    endif
 }
 
@@ -241,7 +265,7 @@ PROPODEF Client client_create(const char *host, int port)
      client.address.sin_family = AF_INET;
      client.address.sin_port = htons((uint16_t)port);
      int result = inet_pton(AF_INET, host, &client.address.sin_addr);
-     PROPO_ASSERT(result == 1 && "client_create: invalid host");
+     propo_assert(result == 1, "client_create: invalid host");
 
      return client;
 }
@@ -292,16 +316,15 @@ typedef struct {
 #define PROPO_CAR_NEUTRAL_VALUE 1500
 #endif // PROPO_CAR_NEUTRAL_VALUE
 
-// Car commands (ch0)
-const char PROPO_CAR_COMMAND_L[]             = "1250";
-const char PROPO_CAR_COMMAND_R[]             = "1900";
-const char PROPO_CAR_COMMAND_LIGHTOFF[]      = "1200";
-const char PROPO_CAR_COMMAND_CABINLIGHT[]    = "1350";
-const char PROPO_CAR_COMMAND_HEADLIGHT[]     = "1650";
-const char PROPO_CAR_COMMAND_ENGINE_OFF[]    = "1800";
-const char PROPO_CAR_COMMAND_ENGINE_ON[]     = "1950";
-const char PROPO_CAR_COMMAND_HORN[]          = "1050";
-const char PROPO_CAR_COMMAND_EPA[]           = "1450";
+static const char PROPO_CAR_COMMAND_L[]           = "1250";
+static const char PROPO_CAR_COMMAND_R[]           = "1900";
+static const char PROPO_CAR_COMMAND_LIGHTOFF[]    = "1200";
+static const char PROPO_CAR_COMMAND_CABINLIGHT[]  = "1350";
+static const char PROPO_CAR_COMMAND_HEADLIGHT[]   = "1650";
+static const char PROPO_CAR_COMMAND_ENGINE_OFF[]  = "1800";
+static const char PROPO_CAR_COMMAND_ENGINE_ON[]   = "1950";
+static const char PROPO_CAR_COMMAND_HORN[]        = "1050";
+static const char PROPO_CAR_COMMAND_EPA[]         = "1450";
 
 typedef struct {
      Client *client;
@@ -378,7 +401,7 @@ PROPODEF int car_trim(const Car *car, int value)
      int trim_value = propo_max(-500, propo_min(value, 500)) + PROPO_CAR_NEUTRAL_VALUE;
 
      Buffer buffer = buf_from_cstr("ch1 ");
-     buf_append_int(&buffer, trim_value);
+     buf_append_uint(&buffer, trim_value);
      return client_send(car->client, &buffer);
 }
 
@@ -391,7 +414,7 @@ PROPODEF int car_steer(const Car *car, int value)
      steering_value += PROPO_CAR_NEUTRAL_VALUE;
 
      Buffer buffer = buf_from_cstr("ch2 ");
-     buf_append_int(&buffer, steering_value);
+     buf_append_uint(&buffer, steering_value);
      return client_send(car->client, &buffer);
 }
 
@@ -404,8 +427,8 @@ PROPODEF int car_throttle(const Car *car, int value)
      throttle_value += PROPO_CAR_NEUTRAL_VALUE;
 
      Buffer buffer = buf_from_cstr("ch3 ");
-     buf_append_int(&buffer, throttle_value);
+     buf_append_uint(&buffer, throttle_value);
      return client_send(car->client, &buffer);
 }
 
-#endif // PROPOTYPE_IMPLEMENTATION
+#endif // PROPOTYPERC_IMPLEMENTATION
