@@ -316,6 +316,11 @@ PROPODEF Car car_create(Client *client, const Car_Config config)
      return car;
 }
 
+PROPODEF void car_close(const Car *car)
+{
+     client_close(car->client);
+}
+
 static int car_command(const Car *car, const char *command)
 {
      Buffer buffer = buf_from_cstr("ch0 ");
