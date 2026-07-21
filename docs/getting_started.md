@@ -35,14 +35,14 @@ int main(void)
 ## Initialize and Cleanup
 As we can see in example above, the `main()` function starts with `propotyperc_init()` and ends with `propotyperc_cleanup()`, but what does it even do?
 
-### Initialize
+### propotyperc_init()
 ```c
 void propotyperc_init(void)
 ```
 The `propotyperc_init()` function initializes the networking environment, you must call this first before using other functions, otherwise those functions might not work as expected.
 > This function is required for Windows, for other operating systems is optional, but it's a best practice to call this function.
 
-### Cleanup
+### propotyperc_cleanup()
 ```c
 void propotyperc_cleanup(void)
 ```
@@ -50,6 +50,7 @@ The `propotyperc_cleanup()` function terminates the networking environment, call
 > Similar to `propotyperc_init()`, this function is required for Windows, optional for other operating systems.
 
 ## Client
+### client_create()
 The `Client` struct sets the destination host and port so we could throw instructions to the car, to create a `Client` variable, assign it with `client_create()` function
 ```c
 Client client_create(const char *host, int port)
@@ -60,6 +61,7 @@ where:
 
 > For Propotype RC cars, you probably always use `PROPO_DEDAULT_HOST` (`"192.168.0.1"`) for host, and `PROPO_DEFAULT_PORT` (`9876`) for port.
 
+### client_close()
 After finished using `Client`, you probably want to free it with `client_close()`:
 ```c
 void client_close(const Client *client)
@@ -91,4 +93,4 @@ int main(void)
      return 0;
 }
 ```
-> For now, let's say that `client_send_with_cstr()` function sends sequence of bytes to the destination host and port.
+> For now, let's say that `client_send_with_cstr()` function converts cstr sequence of bytes, then send to the destination host and port.
