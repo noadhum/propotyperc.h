@@ -1,40 +1,4 @@
 # API Reference
-Hellow! Have you ever wonder how can you control a Propotype RC car outside it's app or physical remote?
-or maybe control the Propotype RC car using C?
-Then this library is (probably) what you're looking for!
-
-## What's this?
-This is a simple, single-header library i write because of this simple question, "Can i control a Propotype RC car from my laptop?".<br>
-What's **Propotype RC**? [Propotype RC](https://propotyperc.com) is an Indonesian brand that specialize in micro and custom RC cars.
-> This library might only work for Propotype RC cars only.
-
-## Quick Example
-This is a very simple example to move the RC car forward (make sure to connect to the RC car's Wi-Fi first):
-```c
-#define PROPOTYPERC_IMPLEMENTATION
-#include "propotyperc.h"
-
-int main(void)
-{
-     // Initialize the library
-     propotyperc_init();
-
-     // Initialize the RC car
-     Client client = client_create(PROPO_DEFAULT_HOST, PROPO_DEFAULT_PORT);
-     Car car = car_create(&client, PROPO_DEFAULT_CAR_CONFIG);
-
-     // Move the car forward (throttle the car)
-     car_throttle(&car, 300);
-
-     // Cleanup
-     car_close(&car);
-     propotyperc_cleanup();
-     return 0;
-}
-```
-> You might didn't want the RC car move forever,
-> change `car_throttle(&car, 300)` to `car_throttle(&car, 0)` to stop the RC car for moving forward forever, or simply turn off the RC car.
-
 ## Include the Library
 Let's start from how do we include the library. To include it, copy [propotyperc.h](https://github.com/noadhum/propotyperc.h/blob/master/propotyperc.h) into your project directory and include it like this:
 ```c
@@ -46,15 +10,13 @@ Let's start from how do we include the library. To include it, copy [propotyperc
 > otherwise we cannot access those functions and structs.
 
 ## Core Functions
-In the [example](#quick-example) above, we can see that `main()` function starts with `propotyperc_init()` and ends with `propotyperc_cleanup()`, but what does it even do?
-
 ### Initialization
 ```c
 void propotyperc_init(void);
 ```
 `propotyperc_init()` initializes the networking environment, this function must be called first before using any other function,
 otherwise those functions might not work as expected.
-> This function is **required** for Windows, other operating systems is optional.
+> This function is **required** for Windows, other operating systems are optional.
 > But it's a good practice to call this anyway.
 
 ### Cleanup
@@ -62,7 +24,7 @@ otherwise those functions might not work as expected.
 void propotyperc_cleanup(void);
 ```
 After you're completely done with this library, you can call `propotyperc_cleanup()` to terminate the networking environment
-> Similar to `propotyperc_init()`, this function is required for Windows, other operating systems is optional.
+> Similar to `propotyperc_init()`, this function is required for Windows, other operating systems are optional.
 
 ## Client
 The `Client` struct contains destination host and port, so we can throw instructions to the RC car.
@@ -105,17 +67,17 @@ This function expect two parameters:
 * `client` - A pointer to a `Client` struct.
 * `buffer` - A pointer to a `Buffer` struct to be sent (just think of it as a sequence of bytes for now).
 
-This function returns amount of bytes sended, otherwise -1 if failed.
+This function returns amount of bytes sent, otherwise -1 if failed.
 
 #### client_send_with_cstr()
 Similar to `client_send()`, the difference is that this function converts a string into a `Buffer` then send to the destination host and port.<br>
-This function expect two parameters":
+This function expect two parameters:
 * `client` - A pointer to a `Client` struct.
 * `cstr` - A string to be sent.
 
 > I usually call a string `cstr`, which is stands for C string.
 
-This function returns amount if bytes sended, otherwise -1 if failed.
+This function returns amount of bytes sent, otherwise -1 if failed.
 
 ## Buffer
 The `Buffer` struct is basically contains a sequence of bytes (or array) that you can throw into `client_send()` function.<br>
@@ -194,15 +156,154 @@ buf_append_cstr(&buffer, "World!");
 ```c
 typedef struct {
      // Steering
-     bool steering_auto_return;
      bool steering_reverse;
      int steering_limits[3];
      size_t steering_limits_idx;
      // Throttle
-     bool throttle_auto_return;
      bool throttle_reverse;
      int throttle_limits[3];
      size_t throttle_limits_idx;
 } Car_Config;
 ```
-The `Car_Config` struct contains the RC car configuration, let's go through the struct members one by one.
+
+The `Car_Config` struct represents the RC Car configuration, let's go through each struct member one by one.
+
+### steering_reverse
+```c
+bool steering_reverse;
+```
+`steering_reverse` reverse the steering if it is set to `true`, otherwise the steering will work normally.
+> Like, when you go left, the RC car go right and vice versa.
+
+### steering_limits
+```c
+int steering_limits[3];
+```
+`steering_limits` is an array where you can fill it with steering limit, eg. (ramp, medium, sharp) as `{200, 300, 500}`.
+> You can only fill `steering_limits` with only 3 elements, the Propotype RC car itself mostly already have it's own steering limit around or above `500`.
+
+### steering_limits_idx
+```c
+size_t steering_limits_idx;
+```
+`steering_limits_idx` contains the current active steering limit, you can only set it in range `0` to `2`, otherwise you might get a weird behavior.
+
+### throttle_reverse
+```c
+bool throttle_reverse;
+```
+`throttle_reverse` reverse the move direction if it is set to `true`, otherwise the move direction will work normally.
+> when you want the RC car go forward, the RC car goes backwards.
+
+### throttle_limits
+```c
+int throttle_limits[3];
+```
+`throttle_limits` is an array where you can fill it with throttle/speed limit, eg. (slow, medium, fast) as `{150, 300, 500}`.
+> You can only fill `throttle_limits` with only 3 elements, the Propotype RC car itself mostly have it's own throttle limit around or above `500`
+
+### throttle_limits_idx
+```c
+size_t throttle_limits_idx;
+```
+`throttle_limits_idx` contains the current active throttle/speed limit, you can only set it in range `0` to `2`, otherwise you might get a weird behavior.
+
+## Car
+The `Car` struct contains `Client` and `Car_Config` so we can throw instructions and configuration into our Propotype RC car.
+### Create a Car
+```c
+Car car_create(Client *client, const Car_Config config);
+```
+To create a `Car`, you can call `car_create()` to create one.<br>
+This function expect two parameters:
+* `client` - A pointer to a `Client` struct
+* `config` - The RC car configuration (`Car_Config` struct)
+> You can throw `PROPO_DEFAULT_CAR_CONFIG` macro to `config` parameter to use the default configuration.
+
+### Close a Car
+```c
+void car_close(const Car *car);
+```
+This function is basicly a wrapper of [`client_close()`](#close-a-client), once you're done with the `Car`,
+you don't need to close the client you pass into the `Car`.
+
+### Car Functions
+These are the `Car` functions you can use:
+```c
+// This function behavior is currently unknown
+int car_L(const Car *car);
+int car_R(const Car *car);
+int car_epa(const Car *car);
+// Car Commands
+int car_lightoff(const Car *car);
+int car_cabinlight(const Car *car);
+int car_headlight(const Car *car);
+int car_engine_off(const Car *car);
+int car_engine_on(const Car *car);
+int car_horn(const Car *car);
+// Car Control
+int car_trim(const Car *car, int value);
+int car_steer(const Car *car, int value);
+int car_throttle(const Car *car, int value);
+```
+> Note that all `Car` functions return the amount of bytes sent.<br>
+> Also, if you know what L or R does, maybe tell me in [Issues](../../../issues).
+
+### Car Commands
+#### car_lightoff()
+```c
+int car_lightoff(const Car *car);
+```
+The `car_lightoff()` function turns the car's light off (usually cabin/headlight).
+
+#### car_cabinlight()
+```c
+int car_cabinlight(const Car *car);
+```
+The `car_cabinlight()` function turns the car's cabin light on.
+
+#### car_headlight()
+```c
+int car_headlight(const Car *car);
+```
+The `car_headlight()` function turns the car's headlight on.
+
+#### car_engine_off()
+```c
+int car_engine_off(const Car *car);
+```
+The `car_engine_off()` function turns the car's engine off.
+
+#### car_engine_on()
+```c
+int car_engine_on(const Car *car);
+```
+The `car_engine_on()` function turns the car's engine on.
+
+#### car_horn()
+```c
+int car_horn(const Car *car);
+```
+The `car_horn()` function does beep beep to the car.
+
+### Car Control
+#### car_trim()
+```c
+int car_trim(const Car *car, int value);
+```
+The `car_trim()` function does trim the car by given `value`.<br>
+If `value` is negative, the car will trim to left, otherwise the car trim to right.
+
+#### car_steer()
+```c
+int car_steer(const Car *car, int value);
+```
+The `car_steer()` function steers the car to left or right by given value.<br>
+If `value` is negative, the car steering goes left, otherwise the car steering goes right.
+
+#### car_throttle()
+```c
+int car_throttle(const Car *car, int value);
+```
+The `car_throttle()` function moves the car forward or backward by given value.<br>
+If `value` is negative, the car moves backward, otherwise the car moves forward.
