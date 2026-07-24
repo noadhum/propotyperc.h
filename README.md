@@ -1,5 +1,5 @@
 # propotyperc.h
-A simple, unofficial C API for [Propotype RC](https://propotyperc.com/) cars
+A simple, unofficial C library for controlling [Propotype RC](https://propotyperc.com/) cars
 
 ## What's this?
 This is a simple, single-header library i write because of this simple question, "Can i control a Propotype RC car from my laptop?".<br>
