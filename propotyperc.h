@@ -1,3 +1,8 @@
+/*
+ * propotyperc.h - v1.0.0 (https://github.com/noadhum/propotyperc.h)
+ * A simple, unofficial C library for controlling Propotype RC cars
+ */
+
 #ifndef PROPOTYPERC_H_
 #define PROPOTYPERC_H_
 
@@ -35,11 +40,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
-
-#ifndef PROPO_ASSERT
-#    include <assert.h>
-#    define PROPO_ASSERT assert
-#endif // PROPO_ASSERT
 
 PROPODEF void propo_assert(bool expr, const char *msg)
 {
@@ -106,8 +106,19 @@ static void buf_append_byte(Buffer *buffer, unsigned char byte)
  * This function converts unsigned integer into ASCII values then append it into given buffer, expects number in range of 0 to 9999
  * if parameter 'number' is greater than 9999, only the last four digits are appended, eg.
  * ```c
- * Buffer buffer = {0};
- * buf_append_uint(&buffer, 12345); // buffer.data is now contains "2345"
+ * #include <stdio.h>
+ *
+ * #define PROPOTYPERC_IMPLEMENTATION
+ * #include "propotyperc.h"
+ *
+ * int main(void)
+ * {
+ *     Buffer buffer = {0};
+ *     buf_append_uint(&buffer, 12345);
+ *     printf("%s\n"); // buffer.data is now contains "2345"
+ *
+ *     return 0;
+ * }
  * ```
  */
 static void buf_append_uint(Buffer *buffer, unsigned int number)
@@ -288,12 +299,10 @@ PROPODEF int client_send_with_cstr(const Client *client, const char *cstr)
 
 typedef struct {
      // Steering
-     bool steering_auto_return;
      bool steering_reverse;
      int steering_limits[3];
      size_t steering_limits_idx;
      // Throttle
-     bool throttle_auto_return;
      bool throttle_reverse;
      int throttle_limits[3];
      size_t throttle_limits_idx;
@@ -301,12 +310,9 @@ typedef struct {
 
 #define PROPO_DEFAULT_CAR_CONFIG                        \
      ((Car_Config){                                     \
-          .steering_auto_return = true,                 \
           .steering_reverse = false,                    \
           .steering_limits = {200, 300, 500},           \
           .steering_limits_idx = 1,                     \
-                                                        \
-          .throttle_auto_return = true,                 \
           .throttle_reverse = false,                    \
           .throttle_limits = {150, 300, 500},           \
           .throttle_limits_idx = 2                      \
@@ -325,6 +331,8 @@ static const char PROPO_CAR_COMMAND_ENGINE_OFF[]  = "1800";
 static const char PROPO_CAR_COMMAND_ENGINE_ON[]   = "1950";
 static const char PROPO_CAR_COMMAND_HORN[]        = "1050";
 static const char PROPO_CAR_COMMAND_EPA[]         = "1450";
+
+static const char PROPO_CAR_NEUTRAL_CSTR[]        = "1500";
 
 typedef struct {
      Client *client;
