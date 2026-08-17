@@ -39,7 +39,7 @@ To create a new `Client`, you can call `client_create()` function to create one.
 This function expect two parameters:
 * `host` - IPv4 host representation in string, e.g. `"127.0.0.1"`.
 * `port` - Port representation in number, e.g. `8080`.
-> If you put an invalid host to `host` parameter, it will throw an assertion.
+> For most of the time, you will use `PROPO_DEFAULT_HOST` and `PROPO_DEFAULT_PORT` macro for the `host` and `port`.
 
 ### Close a Client
 ```c
