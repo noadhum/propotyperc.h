@@ -1,14 +1,70 @@
 /*
- * propotyperc.h - v1.0.0 (https://github.com/noadhum/propotyperc.h)
- * A simple, unofficial C library for controlling Propotype RC cars
+ * propotyperc.h - v2.0.0 (https://github.com/noadhum/propotyperc.h)
+ * A simple, unofficial C/C++ library for controlling Propotype RC cars
  */
 
 #ifndef PROPOTYPERC_H_
 #define PROPOTYPERC_H_
 
+#include <stddef.h>
+
+#ifndef __cplusplus
+#include <stdbool.h>
+#endif // __cplusplus
+
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
+
+typedef struct Buffer Buffer;
+typedef struct Client Client;
+
+typedef struct {
+     // Steering
+     bool steering_reverse;
+     int steering_limits[3];
+     size_t steering_limits_idx;
+     // Throttle
+     bool throttle_reverse;
+     int throttle_limits[3];
+     size_t throttle_limits_idx;
+} Car_Config;
+
+typedef struct {
+     Client *client;
+     Car_Config config;
+} Car;
+
 #ifndef PROPODEF
 #define PROPODEF
 #endif // PROPODEF
+
+PROPODEF void propotyperc_init(void);
+PROPODEF void propotyperc_cleanup(void);
+
+PROPODEF Client client_create(const char *host, int port);
+PROPODEF void client_close(const Client *client);
+PROPODEF int client_send(const Client *client, const Buffer *buffer);
+PROPODEF int client_send_with_cstr(const Client *client, const char *cstr);
+
+PROPODEF Car car_create(Client *client, const Car_Config config);
+PROPODEF void car_close(const Car *car);
+PROPODEF int car_L(const Car *car);
+PROPODEF int car_R(const Car *car);
+PROPODEF int car_lightoff(const Car *car);
+PROPODEF int car_cabinlight(const Car *car);
+PROPODEF int car_headlight(const Car *car);
+PROPODEF int car_engine_off(const Car *car);
+PROPODEF int car_engine_on(const Car *car);
+PROPODEF int car_horn(const Car *car);
+PROPODEF int car_epa(const Car *car);
+PROPODEF int car_trim(const Car *car, int value);
+PROPODEF int car_steer(const Car *car, int value);
+PROPODEF int car_throttle(const Car *car, int value);
+
+#ifdef __cplusplus
+}
+#endif // __cplusplus
 
 #endif // PROPOTYPERC_H_
 
@@ -36,12 +92,10 @@
 #endif
 
 #include <stdarg.h>
-#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stddef.h>
 
-PROPODEF void propo_assert(bool expr, const char *msg)
+static void propo_assert(bool expr, const char *msg)
 {
      if (!expr) {
           fprintf(stderr, "%s\n", msg);
@@ -49,7 +103,7 @@ PROPODEF void propo_assert(bool expr, const char *msg)
      }
 }
 
-PROPODEF void propo_assertf(bool expr, const char *fmt, ...)
+static void propo_assertf(bool expr, const char *fmt, ...)
 {
      if (!expr) {
           va_list args;
@@ -61,13 +115,13 @@ PROPODEF void propo_assertf(bool expr, const char *fmt, ...)
      }
 }
 
-PROPODEF void propo_panic(const char *msg)
+static void propo_panic(const char *msg)
 {
      fprintf(stderr, "%s\n", msg);
      abort();
 }
 
-PROPODEF void propo_panicf(const char *fmt, ...)
+static void propo_panicf(const char *fmt, ...)
 {
      va_list args;
      va_start(args, fmt);
@@ -91,10 +145,10 @@ static int propo_min(int a, int b)
 #define PROPO_BUFFER_SIZE 16
 #endif // PROPO_BUFFER_SIZE
 
-typedef struct {
+struct Buffer {
      unsigned char data[PROPO_BUFFER_SIZE];
      size_t count;
-} Buffer;
+};
 
 static void buf_append_byte(Buffer *buffer, unsigned char byte)
 {
@@ -264,10 +318,10 @@ static int socket_send(Socket s, const Buffer *buffer, const struct sockaddr_in 
 #define PROPO_DEFAULT_HOST "192.168.0.1"
 #define PROPO_DEFAULT_PORT 9876
 
-typedef struct {
+struct Client {
      Socket socket;
      struct sockaddr_in address;
-} Client;
+};
 
 PROPODEF Client client_create(const char *host, int port)
 {
@@ -297,17 +351,6 @@ PROPODEF int client_send_with_cstr(const Client *client, const char *cstr)
      return socket_send(client->socket, &buffer, &client->address);
 }
 
-typedef struct {
-     // Steering
-     bool steering_reverse;
-     int steering_limits[3];
-     size_t steering_limits_idx;
-     // Throttle
-     bool throttle_reverse;
-     int throttle_limits[3];
-     size_t throttle_limits_idx;
-} Car_Config;
-
 #define PROPO_DEFAULT_CAR_CONFIG                        \
      ((Car_Config){                                     \
           .steering_reverse = false,                    \
@@ -333,11 +376,6 @@ static const char PROPO_CAR_COMMAND_HORN[]        = "1050";
 static const char PROPO_CAR_COMMAND_EPA[]         = "1450";
 
 static const char PROPO_CAR_NEUTRAL_CSTR[]        = "1500";
-
-typedef struct {
-     Client *client;
-     Car_Config config;
-} Car;
 
 PROPODEF Car car_create(Client *client, const Car_Config config)
 {
