@@ -1,5 +1,5 @@
 # propotyperc.h
-A simple, unofficial C library for controlling [Propotype RC](https://propotyperc.com/) cars
+A simple, unofficial C/C++ library for controlling [Propotype RC](https://propotyperc.com/) cars
 
 ## What's this?
 This is a simple, single-header library i write because of this simple question, "Can i control a Propotype RC car from my laptop?".<br>
@@ -30,7 +30,7 @@ int main(void)
      return 0;
 }
 ```
-> You might didn't want the RC car move forever,
+> You might not have wanted the RC car move forever,
 > change `car_throttle(&car, 300)` to `car_throttle(&car, 0)` to stop the RC car for moving forward forever, or simply turn off the RC car.
 
 ## API Reference
