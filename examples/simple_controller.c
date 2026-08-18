@@ -31,6 +31,18 @@
 #include <raylib.h>
 #include <stdbool.h>
 
+#ifdef _WIN32
+#ifndef NOUSER
+// Avoid raylib and winuser.h DrawText, CloseWindow name collision
+#define NOUSER
+#endif // NOUSER
+
+#ifndef NOGDI
+// Avoid raylib and wingdi.h Rectangle name collision
+#define NOGDI
+#endif // NOGDI
+#endif // _WIN32
+
 #define PROPOTYPERC_IMPLEMENTATION
 #include "../propotyperc.h"
 
